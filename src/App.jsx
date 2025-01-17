@@ -5,13 +5,19 @@ function App() {
   const [allowedWebsites, setAllowedWebsites] = useState([]);
   const [newWebsite, setNewWebsite] = useState("");
   const [ext, setExt] = useState("");
-
+  
   useEffect(() => {
     chrome.storage.sync.get(
       ["blockedExtensions", "allowedWebsites"],
       (data) => {
-        setBlockedExtensions(data.blockedExtensions || []);
+        setBlockedExtensions(data.blockedExtensions || ["pdf", "docx", "xls"]);
         setAllowedWebsites(data.allowedWebsites || []);
+
+        // Update rules with default extensions
+        chrome.runtime.sendMessage({
+          type: "UPDATE_RULES",
+          fileExtensions: data.blockedExtensions || ["pdf", "docx", "xls"],
+        });
       }
     );
   }, []);
@@ -41,8 +47,6 @@ function App() {
     }
   };
   const toggle = async (ext) => {
-    
-
     const updatedExtensions = blockedExtensions.includes(ext)
       ? blockedExtensions.filter((e) => e !== ext)
       : [...blockedExtensions, ext];
@@ -63,11 +67,10 @@ function App() {
     chrome.declarativeNetRequest.getDynamicRules((rules) => {
       console.log("Dynamic Rules:", rules);
     });
-    
+
     chrome.declarativeNetRequest.getEnabledRulesets((rulesets) => {
       console.log("Enabled Rulesets:", rulesets);
     });
-    
   };
   return (
     <div className="container p-4 bg-gradient-to-r from-indigo-500 w-full">

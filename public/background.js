@@ -87,13 +87,9 @@ function getBaseDomain(url) {
 }
 
 function isSameBaseDomain(url1, url2) {
-  console.log(url1);
-  console.log(url2);
   const domain1 = getBaseDomain(url1);
   const domain2 = getBaseDomain(url2);
-  console.log("domain1", domain1);
-  console.log(" ");
-  console.log("domain2", domain2);
+
   if (domain1 && domain2) {
     return domain1 === domain2;
   }
@@ -112,28 +108,52 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
           if (isSameBaseDomain(downloadURL, element)) isAllowedSite = true;
         }
       }
-     
 
-      const fileExtension = downloadItem?.mime.split("/")[1].toLowerCase();
-      console.log('donwloadItem', downloadItem);
+      let fileExtension;
+      if (downloadItem.filename) {
+        fileExtension = downloadItem.filename.split(".").pop().toLowerCase();
+      } else if (downloadItem.mime) {
+        // Fallback to MIME type
+        const mimeMap = {
+          // Common document types
+          "application/pdf": "pdf",
+          "application/msword": "doc",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+            "docx",
+
+          // Spreadsheet types
+          "application/vnd.ms-excel": "xls",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet":
+            "xlsx",
+
+          // Other common types
+          "application/zip": "zip",
+          "application/x-rar-compressed": "rar",
+          "text/plain": "txt",
+          "image/jpeg": "jpg",
+          "image/png": "png",
+        };
+
+        fileExtension =
+          mimeMap[downloadItem.mime] || downloadItem.mime.split("/")[1];
+      }
+
       // Check if extension is blocked
-      console.log('downloadUrl', downloadURL);
+      console.log("fileExtension", fileExtension);
       let isBlockedExtension = false;
-      if (fileExtension)
-        isBlockedExtension = data.blockedExtensions.some(
-          (extension) => extension === fileExtension
-        );
-      console.log(data.blockedExtensions);
-      console.log(fileExtension);
-      console.log(isBlockedExtension);
-      console.log("isAllowedSite", isAllowedSite);
-      console.log(downloadURL);
+      if (fileExtension) {
+        for (const element of data.blockedExtensions) {
+          if (element === fileExtension) isBlockedExtension = true;
+        }
+      }
+      // console.log('isBlockedExtension', isBlockedExtension)
+      // console.log('isBlockedExtension', isBlockedExtension)
       if (!isAllowedSite && isBlockedExtension)
         if (downloadURL) {
           chrome.downloads.cancel(downloadItem.id);
           // alert('download nahi hoga');
-          await chrome.notifications.create({
-            type: "basic",
+          chrome.runtime.sendMessage({
+            type: "BLOCK_UPLOAD",
             title: "Download Blocked",
             message: `Downloads not allowed from ${downloadURL}`,
             iconUrl: "icons/icon48.png",
@@ -143,60 +163,4 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
   );
 });
 
-// background.js
 
-function updateDynamicRules(blockedExtensions = []) {
-  // Start IDs from 1000 to avoid conflicts
-  const baseId = 1000;
-
-  const rules = blockedExtensions.map((ext, index) => ({
-    id: baseId + index,
-    priority: 1,
-    action: { type: "block" },
-    condition: {
-      urlFilter: "*",
-      resourceTypes: ["xmlhttprequest", "sub_frame", "other"],
-      requestMethods: ["post", "put"],
-      regexFilter: `\\.${ext}$`,
-    },
-  }));
-
-  // Get and remove all existing dynamic rules
-  chrome.declarativeNetRequest.getDynamicRules((existingRules) => {
-    const existingRuleIds = existingRules.map((rule) => rule.id);
-    console.log("Removing existing rules:", existingRuleIds);
-    console.log("Adding new rules", rules);
-
-    chrome.declarativeNetRequest.updateDynamicRules(
-      {
-        removeRuleIds: existingRuleIds,
-        addRules: rules,
-      },
-      () => {
-        if (chrome.runtime.lastError) {
-          console.error("Rule update failed:", chrome.runtime.lastError);
-        } else {
-          console.log("New rules added:", rules);
-          // Store current rule IDs
-          chrome.storage.sync.set({
-            activeRuleIds: rules.map((rule) => rule.id),
-          });
-        }
-      }
-    );
-  });
-  chrome.declarativeNetRequest.getDynamicRules(async (existingRules) => {
-    const newRuleIds = await existingRules.map((rule) => rule.id);
-    console.log(newRuleIds);
-  });
-}
-
-// Listen for rule update requests
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === "UPDATE_RULES") {
-    console.log("Updating rules with extensions:", message.fileExtensions);
-    updateDynamicRules(message.fileExtensions);
-    sendResponse({ success: true });
-    return true;
-  }
-});
