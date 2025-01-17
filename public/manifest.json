@@ -1,0 +1,31 @@
+{
+  "manifest_version": 3,
+  "name": "DLP Extension",
+  "version": "1.0",
+  "description": "Block file uploads/downloads on unauthorized sites",
+  "permissions": [
+    "storage",
+    "notifications",
+    "declarativeNetRequest",
+    "downloads"
+  ],
+  "host_permissions": ["<all_urls>"],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon16.png",
+    "128": "icons/icon16.png"
+  },
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "index.html"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}

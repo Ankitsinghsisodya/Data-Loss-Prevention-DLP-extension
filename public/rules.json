@@ -1,0 +1,19 @@
+[
+    {
+      "id": 1,
+      "priority": 1,
+      "action": { "type": "block" },
+      "condition": {
+        "urlFilter": "*",
+        "resourceTypes": ["xmlhttprequest", "sub_frame"],
+        "requestMethods": ["post", "put"],
+        "mimeTypes": [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "application/vnd.ms-excel",
+          "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        ]
+      }
+    }
+  ]
