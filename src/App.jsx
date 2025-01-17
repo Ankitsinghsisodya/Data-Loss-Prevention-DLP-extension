@@ -4,6 +4,7 @@ function App() {
   const [blockedExtensions, setBlockedExtensions] = useState([]);
   const [allowedWebsites, setAllowedWebsites] = useState([]);
   const [newWebsite, setNewWebsite] = useState("");
+  const [ext, setExt] = useState("");
 
   useEffect(() => {
     chrome.storage.sync.get(
@@ -39,20 +40,76 @@ function App() {
       setNewWebsite("");
     }
   };
+  const toggle = async (ext) => {
+    
 
+    const updatedExtensions = blockedExtensions.includes(ext)
+      ? blockedExtensions.filter((e) => e !== ext)
+      : [...blockedExtensions, ext];
+
+    await setBlockedExtensions(updatedExtensions);
+    await chrome.storage.sync.set({ blockedExtensions: updatedExtensions });
+    chrome.storage.sync.set(
+      {
+        blockedExtensions: updatedExtensions,
+      },
+      () => {
+        chrome.runtime.sendMessage({
+          type: "UPDATE_RULES",
+          fileExtensions: blockedExtensions,
+        });
+      }
+    );
+    chrome.declarativeNetRequest.getDynamicRules((rules) => {
+      console.log("Dynamic Rules:", rules);
+    });
+    
+    chrome.declarativeNetRequest.getEnabledRulesets((rulesets) => {
+      console.log("Enabled Rulesets:", rulesets);
+    });
+    
+  };
   return (
     <div className="container p-4 bg-gradient-to-r from-indigo-500 w-full">
       <h1 className="text-xl mb-2 font-extrabold">DLP Settings</h1>
 
       <div className="mb-2">
         <h2 className="text-lg font-extrabold">Blocked File Types</h2>
-        <ul className=" pl-5 flex  justify-between">
+        <div className="pl-5 flex justify-between flex-wrap">
           {blockedExtensions.map((ext) => (
-            <li key={ext} className="font-bold">
-              {ext}
-            </li>
+            <div key={ext} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id={`ext-${ext}`}
+                checked={blockedExtensions.includes(ext)}
+                onChange={() => toggle(ext)}
+                className="form-checkbox"
+              />
+              <label htmlFor={`ext-${ext}`} className="font-bold">
+                {ext}
+              </label>
+            </div>
           ))}
-        </ul>
+        </div>
+
+        <div className="flex gap-2 my-2">
+          <input
+            type="text"
+            value={ext}
+            onChange={(e) => setExt(e.target.value)}
+            className="border rounded px-2 py-1 flex-1"
+            placeholder="Enter the extensions"
+          />
+          <button
+            onClick={() => {
+              toggle(ext);
+              setExt("");
+            }}
+            className="bg-blue-500 text-white px-3 py-1 rounded"
+          >
+            Add
+          </button>
+        </div>
       </div>
 
       <div className="mb-4">
@@ -62,7 +119,7 @@ function App() {
             type="text"
             value={newWebsite}
             onChange={(e) => setNewWebsite(e.target.value)}
-            className="border p-1 rounded-xl"
+            className="border rounded px-2 py-1 flex-1"
             placeholder="Enter website domain"
           />
           <button
@@ -80,13 +137,13 @@ function App() {
                 key={site}
                 className="py-2 px-1 flex justify-between items-center hover:bg-gray-50"
               >
-                <span>{site}</span>
                 <button
                   onClick={() => removeWebsite(site)}
-                  className="text-red-500 hover:text-red-600"
+                  className="text-red-500 hover:text-red-600 mr-3 w-2 h-6"
                 >
                   ×
                 </button>
+                <span>{site}</span>
               </li>
             ))}
           </ul>

@@ -1,47 +1,39 @@
-document.addEventListener('DOMContentLoaded', () => {
-    // Block file inputs on unauthorized sites
-    const checkAndBlockFileInputs = () => {
-      const fileInputs = document.querySelectorAll('input[type="file"]');
-      fileInputs.forEach(input => {
-        input.addEventListener('click', async (e) => {
-          // Check if site is allowed before file selection
-          const response = await chrome.runtime.sendMessage({
-            type: 'CHECK_SITE',
-            url: window.location.hostname
-          });
-          
-          if (response && response.blocked) {
-            e.preventDefault();
-            e.stopPropagation();
-            alert('File uploads are not allowed on this website.');
-            return false;
-          }
-        }, true);
-      });
-    };
-  
-    // Initial check
-    checkAndBlockFileInputs();
-  
-    // Watch for dynamically added file inputs
-    const observer = new MutationObserver(checkAndBlockFileInputs);
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-  
-    // Block form submissions
-    document.addEventListener('change', async (e) => {
-      const response = await chrome.runtime.sendMessage({
-        type: 'CHECK_SITE',
-        url: window.location.hostname
-      });
-      
-      if (response && response.blocked) {
-        e.preventDefault();
-        e.stopPropagation();
-        alert('File uploads are not allowed on this website.');
-        return false;
-      }
-    }, true);
-  });
+// // Function to disable all HTML elements on the page
+// const disableAllElements = () => {
+//   // Get all elements in the document
+//   const allElements = document.querySelectorAll("*");
+
+//   allElements.forEach((element) => {
+//     // Check if the element supports the 'disabled' attribute
+//     if (typeof element.disabled !== "undefined") {
+//       element.disabled = true; // Disable the element
+//     } else {
+//       // For elements that don't support 'disabled', prevent interaction
+//       element.style.pointerEvents = "none";
+//       element.style.opacity = "0.5"; // Optional: visually indicate disabled state
+//     }
+//   });
+// };
+
+// // Disable elements immediately
+// disableAllElements();
+
+// // Observe dynamically added elements and disable them
+// const observer = new MutationObserver(() => {
+//   disableAllElements();
+// });
+
+// // Start observing the document for added/removed nodes
+// if (document.body) {
+//   observer.observe(document.body, {
+//     childList: true,
+//     subtree: true,
+//   });
+// } else {
+//   document.addEventListener("DOMContentLoaded", () => {
+//     observer.observe(document.body, {
+//       childList: true,
+//       subtree: true,
+//     });
+//   });
+// };
