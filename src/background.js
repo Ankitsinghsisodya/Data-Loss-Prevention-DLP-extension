@@ -1,3 +1,5 @@
+import browser from "webextension-polyfill";
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.storage.sync.set({
     blockedExtensions: ["pdf", "docx", "xlsx", "xls"],
