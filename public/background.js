@@ -6,6 +6,24 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  const currentURL = sender?.tab?.url ? new URL(sender.tab.url).hostname : null;
+
+  if (message.type === "UPDATE_ALLOWED_SITES") {
+    // Update storage
+    chrome.storage.sync.set({ allowedWebsites: message.sites }, () => {
+      // Refresh active tab to apply new rules
+      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+        if (tabs[0]) {
+          chrome.tabs.reload(tabs[0].id);
+        }
+      });
+      sendResponse({ success: true });
+    });
+    return true; // Keep message channel open
+  }
+});
+
 function getBaseDomain(url) {
   try {
     // Extract the hostname from the URL

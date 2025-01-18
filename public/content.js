@@ -35,11 +35,10 @@ function checkAndDisableElements() {
     const allowedWebsites = data.allowedWebsites || [];
     const currentHostname = window.location;
 
-    const isAllowed = allowedWebsites.some(
-      (site) => isSameBaseDomain(currentHostname, site) 
+    const isAllowed = allowedWebsites.some((site) =>
+      isSameBaseDomain(currentHostname, site)
     );
 
-  
     if (!isAllowed) {
       document
         .querySelectorAll("input, textarea, select, button")
@@ -49,37 +48,15 @@ function checkAndDisableElements() {
         });
     }
   });
-
 }
 // Message Listener
 // Message Listener for download blocking
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  console.log('Message received:', message);
+  console.log("Message received:", message);
 
   if (message.type === "BLOCK_UPLOAD") {
-    // Create alert dialog
-    alert(`Unwanted upload was prevented`);
-    
-    // // Create visual notification
-    // const notification = document.createElement('div');
-    // notification.style.cssText = `
-    //   position: fixed;
-    //   top: 20px;
-    //   right: 20px;
-    //   background: #ff4444;
-    //   color: white;
-    //   padding: 15px;
-    //   border-radius: 4px;
-    //   z-index: 9999;
-    //   box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    // `;
-    // // notification.textContent = message.message;
-    // document.body.appendChild(notification);
+    alert(`Unwanted donwnload was prevented`);
 
-    // // Remove notification after 5 seconds
-    // setTimeout(() => notification.remove(), 5000);
-
-    // Send success response
     sendResponse({ success: true });
   }
   return true; // Keep message channel open
@@ -88,8 +65,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 checkAndDisableElements();
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
-  if (namespace === 'sync' && changes.allowedWebsites) {
-    console.log('Allowed websites updated:', changes.allowedWebsites.newValue);
+  if (namespace === "sync" && changes.allowedWebsites) {
     checkAndDisableElements();
   }
 });
