@@ -55,7 +55,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   console.log("Message received:", message);
 
   if (message.type === "BLOCK_UPLOAD") {
-    alert(`Unwanted donwnload was prevented`);
+    alert(`Unwanted donwnload was prevented because this website in not permitted`);
 
     sendResponse({ success: true });
   }
