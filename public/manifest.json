@@ -10,15 +10,7 @@
     "downloads",
     "declarativeNetRequestFeedback"
   ],
-  "declarative_net_request": {
-    "rule_resources": [
-      {
-        "id": "ruleset_1",
-        "enabled": true,
-        "path": "rules.json"
-      }
-    ]
-  },
+
   "host_permissions": ["<all_urls>"],
   "icons": {
     "16": "icons/icon16.png",

@@ -6,65 +6,6 @@ chrome.runtime.onInstalled.addListener(() => {
   });
 });
 
-chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  const currentURL = sender?.tab?.url ? new URL(sender.tab.url).hostname : null;
-
-  if (message.type === "CHECK_SITE" && currentURL) {
-    console.log("aayi aapka swagat h");
-    chrome.storage.sync.get(
-      ["blockedExtensions", "allowedWebsites"],
-      async (data) => {
-        const isAllowedSite = data.allowedWebsites.some((site) =>
-          //   currentURL.includes(site)
-          site.includes(currentURL)
-        );
-
-        if (!isAllowedSite)
-          if (data.blockedExtensions.includes(message.extension)) {
-            // Notify content script to prevent upload
-
-            await chrome.tabs.sendMessage(sender.tab.id, {
-              type: "BLOCK_UPLOAD",
-              fileType: message.extension,
-              reason: !isAllowedSite
-                ? "Unauthorized website"
-                : "Blocked file type",
-            });
-
-            // Show notification
-            await chrome.notifications.create({
-              type: "basic",
-              title: "File Operation Blocked",
-              message: !isAllowedSite
-                ? `${currentURL} is not authorized for file operations`
-                : `Cannot upload .${message.extension} files`,
-              iconUrl: "icons/icon48.png",
-            });
-
-            sendResponse({ blocked: true });
-          } else {
-            sendResponse({ blocked: false });
-          }
-      }
-    );
-    return true; // Keep message channel open
-  }
-
-  if (message.type === "UPDATE_ALLOWED_SITES") {
-    // Update storage
-    chrome.storage.sync.set({ allowedWebsites: message.sites }, () => {
-      // Refresh active tab to apply new rules
-      chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-        if (tabs[0]) {
-          chrome.tabs.reload(tabs[0].id);
-        }
-      });
-      sendResponse({ success: true });
-    });
-    return true; // Keep message channel open
-  }
-});
-
 function getBaseDomain(url) {
   try {
     // Extract the hostname from the URL
@@ -139,7 +80,7 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
       }
 
       // Check if extension is blocked
-      console.log("fileExtension", fileExtension);
+
       let isBlockedExtension = false;
       if (fileExtension) {
         for (const element of data.blockedExtensions) {
@@ -152,8 +93,37 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
         if (downloadURL) {
           chrome.downloads.cancel(downloadItem.id);
           // alert('download nahi hoga');
-          chrome.runtime.sendMessage({
-            type: "BLOCK_UPLOAD",
+          console.log("Sending notification");
+          chrome.tabs.query(
+            { active: true, currentWindow: true },
+            function (tabs) {
+              if (tabs[0]) {
+                chrome.tabs.sendMessage(
+                  tabs[0].id,
+                  {
+                    type: "BLOCK_UPLOAD",
+                    title: "Download Blocked",
+                    message: `Downloads not allowed from ${downloadURL}`,
+                    iconUrl: "icons/icon48.png",
+                  },
+                  (response) => {
+                    if (chrome.runtime.lastError) {
+                      console.error(
+                        "Message sending failed:",
+                        chrome.runtime.lastError
+                      );
+                    } else {
+                      console.log("Message sent successfully:", response);
+                    }
+                  }
+                );
+              }
+            }
+          );
+
+          // Show notification
+          chrome.notifications.create({
+            type: "basic",
             title: "Download Blocked",
             message: `Downloads not allowed from ${downloadURL}`,
             iconUrl: "icons/icon48.png",
@@ -162,5 +132,3 @@ chrome.downloads.onCreated.addListener((downloadItem) => {
     }
   );
 });
-
-
